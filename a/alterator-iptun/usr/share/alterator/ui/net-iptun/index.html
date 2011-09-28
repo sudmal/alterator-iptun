@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html wf="none">
+  <body>
+    <form method="POST">
+	<table>
+	    <tr>
+		<input type="hidden" name="new_name"/>
+		<input type="button" name="new_button" value="New connection..." class="btn"/>
+		<br/>
+		<hr/>
+	    </tr>
+	    <tr>
+		<td>
+		    <select name="name" size="17" style="width:100px"/>
+		</td>
+		<td>
+		    <table class="form-table">
+			<tr>
+			    <td><span translate="_">Status:</span></td>
+			    <td>
+				<span class="alterator-label" style="font-weight:bold;" name="info"/>
+				<select name="status"/>
+			    </td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Description:</span></td>
+			    <td><input type="text" class="text" name="descr"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">IP Address:</span></td>
+			    <td><input type="text" class="text" name="ipv4address"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Local IP:</span></td>
+			    <td><input type="text" class="text" name="tunlocal"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Remote IP:</span></td>
+			    <td><input type="text" class="text" name="tunremote"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Tun Type:</span></td>
+			    <td><input type="text" class="text" name="tuntype"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Type:</span></td>
+			    <td><input type="text" class="text" name="type"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">MTU:</span></td>
+			    <td><input type="text" class="text" name="tunmtu"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Options:</span></td>
+			    <td><input type="text" class="text" name="tunoptions"/></td>
+			</tr>
+			<tr>
+			    <td><span translate="_">Disabled:</span></td>
+			    <td><input type="text" class="text" name="disable"/></td>
+			</tr>
+			<tr>
+			    <td colspan="2">&nbsp;</td>
+			</tr>
+			<tr>
+			    <td>&nbsp;</td>
+			    <td>
+				<input type="button" name="apply_button" value="Apply" class="btn"/>
+				<input type="button" name="reset_button" value="Reset" class="btn"/>
+				&nbsp;&nbsp;
+				<input type="button" name="del_button" value="Delete connection" class="btn"/>
+			    </td>
+			</tr>
+		    </table>
+		</td>
+	    </tr>
+	</table>
+    </form>
+  </body>
+</html>

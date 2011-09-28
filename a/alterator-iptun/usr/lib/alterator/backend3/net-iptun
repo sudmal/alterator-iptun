@@ -1,0 +1,190 @@
+#!/bin/sh -f
+
+wait_time=0
+alterator_api_version=1
+
+. alterator-sh-functions
+. alterator-net-functions
+. alterator-hw-functions
+
+### string iptun options
+
+write_iptun_option()
+{
+    shell_config_set "$1/options" "$2" "$3" '' ''
+}
+
+write_iptun_option_addr()
+{
+    shell_config_set "$1/ipv4address" "$2" "" '' ''
+}
+
+read_iptun_option()
+{
+    local type="$(shell_config_get "$name/options" "$2")"
+    echo $type
+}
+
+read_iptun_option_addr()
+{
+    local type=`cat $name/ipv4address`
+    echo $type
+}
+
+next_iptun()
+{
+    next_iface gre 1
+}
+
+list_iptun()
+{
+    for i in `grep -R TUNTYPE=gre "$etcnet_iface_dir"|awk -F"/" '{print $5}'|sort`; do
+	    echo "${i##*/}" 2>/dev/null
+    done
+}
+
+
+### shell file helpers
+
+read_connection()
+{
+	local name="/etc/net/ifaces/$1"
+
+	local info=
+	netdev_is_up "$1" && info="`_ "UP"`" || info="`_ "DOWN"`"
+	write_string_param info "$info"
+
+	write_string_param descr "$(read_iptun_option "$name" "DESCR" )"
+	write_string_param ipv4address "$(read_iptun_option_addr "$name" "" )"
+	write_string_param tunlocal "$(read_iptun_option "$name" "TUNLOCAL" )"
+	write_string_param tunremote "$(read_iptun_option "$name" "TUNREMOTE" )"
+	write_string_param tuntype "$(read_iptun_option "$name" "TUNTYPE" )"
+	write_string_param type "$(read_iptun_option "$name" "TYPE" )"
+	write_string_param tunmtu "$(read_iptun_option "$name" "TUNMTU" )"
+	local tno="$(read_iptun_option "$name" "TUNOPTIONS" )"
+	local tunopt=`echo $tno |awk -F"'" '{print $2}'`
+	write_string_param tunoptions "$tunopt"
+
+	write_string_param disable "$(read_iptun_option "$name" "DISABLE" )"
+
+}
+
+write_connection()
+{
+	[ "$1" = "/" ] && return
+	local name="/etc/net/ifaces/$1"
+
+	[ -d "$name" ] || mkdir -- "$name"
+	cat>"$name/options"<<EOF
+EOF
+	[ -d "$name" ] || mkdir -- "$name"
+	cat>"$name/ipv4address"<<EOF
+EOF
+	[ -d "$name" ] || mkdir -- "$name"
+	cat>"$name/ipv4route"<<EOF
+EOF
+
+	[ -n "$in_descr" ] && write_iptun_option "$name" "DESCR=$in_descr"
+	[ -n "$in_ipv4address" ] && write_iptun_option_addr "$name" "$in_ipv4address"
+	[ -n "$in_tunlocal" ] && write_iptun_option "$name" "TUNLOCAL=$in_tunlocal"
+	[ -n "$in_tunremote" ] && write_iptun_option "$name" "TUNREMOTE=$in_tunremote"
+	[ -n "$in_tuntype" ] && write_iptun_option "$name" "TUNTYPE=$in_tuntype"
+	[ -n "$in_type" ] && write_iptun_option "$name" "TYPE=$in_type"
+	[ -n "$in_tunmtu" ] && write_iptun_option "$name" "TUNMTU=$in_tunmtu"
+	[ -n "$in_tunoptions" ] && write_iptun_option "$name" "TUNOPTIONS='$in_tunoptions'"
+	[ -n "$in_disable" ] && write_iptun_option "$name" "DISABLE=$in_disable"
+}
+
+new_connection()
+{
+    local name="/etc/net/ifaces/$1"
+    mkdir -p -- "$name"
+	cat>"$name/options"<<EOF
+EOF
+	cat>"$name/ipv4address"<<EOF
+EOF
+	cat>"$name/ipv4route"<<EOF
+EOF
+    local tunopt="'ttl 64'"
+    local newip="10.0.0.257 peer 10.0.0.258/30"
+    write_iptun_option_addr "$name" "$newip"
+
+    write_iptun_option "$name" DESCR=New Tunnel
+    write_iptun_option "$name" TUNLOCAL=1.1.1.1
+    write_iptun_option "$name" TUNREMOTE=2.2.2.2
+    write_iptun_option "$name" TUNTYPE=gre
+    write_iptun_option "$name" TYPE=iptun
+    write_iptun_option "$name" TUNMTU=1470
+    write_iptun_option "$name" TUNOPTIONS="$tunopt"
+    write_iptun_option "$name" DISABLE=no
+}
+
+delete_connection()
+{
+	[ "$1" = "/" ] && return
+	local name="/etc/net/ifaces/$1"
+
+	iface_down "$1"
+	rm -rf -- "$name"
+}
+
+iface_up_priv()
+{
+    local iface="$1";shift
+    local n="${1:-0}";shift
+
+    env -i PATH="$PATH" HOME="$HOME" TMPDIR="$TMPDIR" /usr/bin/setsid /sbin/ifup "$iface" >/dev/null
+    for i in $(seq 0 "$n"); do
+        netdev_is_up "$iface" && return 0
+        [ "$i" != "$n" ] || sleep 1
+    done
+    return 1
+}
+
+on_message()
+{
+	case "$in_action" in
+		list)
+			case "$in__objects" in
+			    avail_connection)
+				list_iptun 'iptun'|write_enum
+				;;
+			    avail_state)
+				write_enum_item "ignore" "`_ "don't change"`" #'
+				write_enum_item "start" "`_ "start"`"
+				write_enum_item "stop" "`_ "stop"`"
+				write_enum_item "restart" "`_ "restart"`"
+				;;
+			esac
+			;;
+		read)
+			local name="$in_name"
+			[ -n "$in_new" ] && name="$in_new_name"
+			[ -n "$name" ] || name="$(list_iptun 'iptun'|head -n1)"
+
+			write_string_param new_name "$(next_iptun)"
+			write_string_param name "$name"
+			write_string_param status "ignore"
+			[ -n "$name" ] && read_connection "$name"
+			;;
+		write)
+			if [ -n "$in_new" -a -n "$in_new_name" ];then
+			    new_connection "$in_new_name"
+			elif [ -n "$in_delete" -a -n "$in_name" ];then
+			    delete_connection "$in_name"
+			elif [ -n "$in_commit" -a -n "$in_name" ];then
+			    write_connection "$in_name"
+			    case "$in_status" in
+				start) iface_up_priv "$in_name" "$wait_time"  ;;
+				stop) iface_down "$in_name" "$wait_time" ;;
+				restart)
+				    iface_down "$in_name" "$wait_time"
+				    iface_up "$in_name" "$wait_time"
+				    ;;
+			    esac
+			fi
+			;;
+	esac
+}
+
+message_loop

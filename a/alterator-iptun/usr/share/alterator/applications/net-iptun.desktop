@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Categories=X-Alterator-Network
+Icon=net-iptun
+Terminal=false
+Name=IP Tunnels
+X-Alterator-URI=/net-iptun
+X-Alterator-Help=net-iptun
+Name[ru]=IP Туннели
+Name[uk]=IP Тунелi
+Name[pt_BR]=IP Conexões
+Name[es]=IP conecciones
