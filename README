@@ -1,0 +1,4 @@
+Just copy content of alterator-iptuntar.gz to your "/" and make:
+/sbin/service alteratord restart
+/sbin/service ahttpd restart
+Login to your alterator Web-page, and see at section "Network".
